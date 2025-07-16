@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model blog {
+  BlogID    Int       @id @default(autoincrement())
+  userID    Int?
+  title     String?   @db.VarChar(255)
+  content   String?   @db.Text
+  tags      String?   @db.VarChar(255)
+  published Boolean?
+  createdAt DateTime? @db.DateTime(0)
+  updatedAt DateTime? @db.DateTime(0)
+  user      user?     @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "blog_ibfk_1")
+
+  @@index([userID], map: "userID")
+}
+
+model cart {
+  CartID    Int         @id @default(autoincrement())
+  userID    Int?
+  createdAt DateTime?   @db.DateTime(0)
+  updatedAt DateTime?   @db.DateTime(0)
+  user      user?       @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "cart_ibfk_1")
+  cartitems cartitems[]
+
+  @@index([userID], map: "userID")
+}
+
+model cartitems {
+  CartItemID     Int             @id @default(autoincrement())
+  cartID         Int?
+  productID      Int?
+  variantID      Int?
+  quantity       Int?
+  addedAt        DateTime?       @db.DateTime(0)
+  cart           cart?           @relation(fields: [cartID], references: [CartID], onDelete: NoAction, onUpdate: NoAction, map: "cartitems_ibfk_1")
+  product        product?        @relation(fields: [productID], references: [ProductID], onDelete: NoAction, onUpdate: NoAction, map: "cartitems_ibfk_2")
+  productvariant productvariant? @relation(fields: [variantID], references: [VariantID], onDelete: NoAction, onUpdate: NoAction, map: "cartitems_ibfk_3")
+
+  @@index([cartID], map: "cartID")
+  @@index([productID], map: "productID")
+  @@index([variantID], map: "variantID")
+}
+
+model inventory_log {
+  InventID       Int             @id @default(autoincrement())
+  userID         Int?
+  variantID      Int?
+  quantity       Int?
+  lastUpdated    DateTime?       @db.DateTime(0)
+  user           user?           @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "inventory_log_ibfk_1")
+  productvariant productvariant? @relation(fields: [variantID], references: [VariantID], onDelete: NoAction, onUpdate: NoAction, map: "inventory_log_ibfk_2")
+
+  @@index([userID], map: "userID")
+  @@index([variantID], map: "variantID")
+}
+
+model orderitem {
+  OI_ID          Int             @id @default(autoincrement())
+  orderID        Int?
+  variantID      Int?
+  quantity       Int?
+  price          Decimal?        @db.Decimal(10, 2)
+  discount       Decimal?        @db.Decimal(10, 2)
+  orders         orders?         @relation(fields: [orderID], references: [OrderID], onDelete: NoAction, onUpdate: NoAction, map: "orderitem_ibfk_1")
+  productvariant productvariant? @relation(fields: [variantID], references: [VariantID], onDelete: NoAction, onUpdate: NoAction, map: "orderitem_ibfk_2")
+
+  @@index([orderID], map: "orderID")
+  @@index([variantID], map: "variantID")
+}
+
+model orders {
+  OrderID         Int         @id @default(autoincrement())
+  userID          Int?
+  totalAmount     Decimal?    @db.Decimal(10, 2)
+  discountID      Int?
+  shippingAddress String?     @db.Text
+  status          String?     @db.VarChar(50)
+  createdAt       DateTime?   @db.DateTime(0)
+  updatedAt       DateTime?   @db.DateTime(0)
+  PaymentMethod   String?     @db.VarChar(50)
+  orderitem       orderitem[]
+  user            user?       @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_1")
+  promotion       promotion?  @relation(fields: [discountID], references: [DiscountID], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_2")
+  payment         payment[]
+  returns         returns[]
+
+  @@index([discountID], map: "discountID")
+  @@index([userID], map: "userID")
+}
+
+model payment {
+  paymentID Int       @id @default(autoincrement())
+  orderID   Int?
+  amount    Decimal?  @db.Decimal(10, 2)
+  method    String?   @db.VarChar(50)
+  status    String?   @db.VarChar(50)
+  paidAt    DateTime? @db.DateTime(0)
+  orders    orders?   @relation(fields: [orderID], references: [OrderID], onDelete: NoAction, onUpdate: NoAction, map: "payment_ibfk_1")
+
+  @@index([orderID], map: "orderID")
+}
+
+model product {
+  ProductID      Int              @id @default(autoincrement())
+  name           String?          @db.VarChar(100)
+  description    String?          @db.Text
+  price          Decimal?         @db.Decimal(10, 2)
+  stockQuantity  Int?
+  category       String?          @db.VarChar(100)
+  createdAt      DateTime?        @db.DateTime(0)
+  updatedAt      DateTime?        @db.DateTime(0)
+  brand          String?          @db.VarChar(100)
+  warranty       DateTime?        @db.DateTime(0)
+  cartitems      cartitems[]
+  productvariant productvariant[]
+  promo_code     promo_code[]
+  review         review[]
+}
+
+model productsqna {
+  QnAID      Int       @id @default(autoincrement())
+  userID     Int?
+  question   String?   @db.Text
+  answer     String?   @db.Text
+  askedAt    DateTime? @db.DateTime(0)
+  answeredAt DateTime? @db.DateTime(0)
+  user       user?     @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "productsqna_ibfk_1")
+
+  @@index([userID], map: "userID")
+}
+
+model productvariant {
+  VariantID     Int             @id @default(autoincrement())
+  ProductID     Int?
+  color         String?         @db.Text
+  storage       String?         @db.VarChar(50)
+  RAM           String?         @db.Char(10)
+  ROM           String?         @db.Char(10)
+  image         String?         @db.Text
+  cartitems     cartitems[]
+  inventory_log inventory_log[]
+  orderitem     orderitem[]
+  product       product?        @relation(fields: [ProductID], references: [ProductID], onDelete: NoAction, onUpdate: NoAction, map: "productvariant_ibfk_1")
+
+  @@index([ProductID], map: "ProductID")
+}
+
+model promo_code {
+  PromoCodeID Int        @id @default(autoincrement())
+  productID   Int?
+  discountID  Int?
+  userID      Int?
+  code        String?    @db.Char(10)
+  product     product?   @relation(fields: [productID], references: [ProductID], onDelete: NoAction, onUpdate: NoAction, map: "promo_code_ibfk_1")
+  promotion   promotion? @relation(fields: [discountID], references: [DiscountID], onDelete: NoAction, onUpdate: NoAction, map: "promo_code_ibfk_2")
+  user        user?      @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "promo_code_ibfk_3")
+
+  @@index([discountID], map: "discountID")
+  @@index([productID], map: "productID")
+  @@index([userID], map: "userID")
+}
+
+model promotion {
+  DiscountID  Int          @id @default(autoincrement())
+  name        String?      @db.VarChar(100)
+  description String?      @db.Text
+  type        String?      @db.VarChar(50)
+  value       Decimal?     @db.Decimal(10, 2)
+  startDate   DateTime?    @db.DateTime(0)
+  endDate     DateTime?    @db.DateTime(0)
+  isActive    Boolean?
+  createdAt   DateTime?    @db.DateTime(0)
+  updatedAt   DateTime?    @db.DateTime(0)
+  orders      orders[]
+  promo_code  promo_code[]
+}
+
+model refund {
+  RefundID Int      @id @default(autoincrement())
+  returnID Int?
+  Amount   Int?
+  Status   String?  @db.VarChar(50)
+  returns  returns? @relation(fields: [returnID], references: [returnID], onDelete: NoAction, onUpdate: NoAction, map: "refund_ibfk_1")
+
+  @@index([returnID], map: "returnID")
+}
+
+model returns {
+  returnID    Int       @id @default(autoincrement())
+  orderID     Int?
+  reason      String?   @db.Text
+  status      String?   @db.VarChar(50)
+  createdAt   DateTime? @db.DateTime(0)
+  processedAt String?   @db.VarChar(50)
+  refund      refund[]
+  orders      orders?   @relation(fields: [orderID], references: [OrderID], onDelete: NoAction, onUpdate: NoAction, map: "returns_ibfk_1")
+
+  @@index([orderID], map: "orderID")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model review {
+  ReviewID  Int       @id @default(autoincrement())
+  productID Int?
+  userID    Int?
+  rating    Int?
+  comment   String?   @db.VarChar(255)
+  date      DateTime? @db.DateTime(0)
+  product   product?  @relation(fields: [productID], references: [ProductID], onDelete: NoAction, onUpdate: NoAction, map: "review_ibfk_1")
+  user      user?     @relation(fields: [userID], references: [UserID], onDelete: NoAction, onUpdate: NoAction, map: "review_ibfk_2")
+
+  @@index([productID], map: "productID")
+  @@index([userID], map: "userID")
+}
+
+model user {
+  UserID        Int             @id @default(autoincrement())
+  userName      String?         @db.VarChar(100)
+  password      String?         @db.VarChar(100)
+  fullName      String?         @db.VarChar(100)
+  email         String?         @db.VarChar(100)
+  phone         String?         @db.VarChar(20)
+  role          String?         @db.VarChar(50)
+  createdAt     DateTime?       @db.DateTime(0)
+  updatedAt     DateTime?       @db.DateTime(0)
+  birthDate     DateTime?       @db.Date
+  gender        String?         @db.VarChar(10)
+  address       String?         @db.VarChar(255)
+  isDeleted     Boolean?        @default(false)
+  blog          blog[]
+  cart          cart[]
+  inventory_log inventory_log[]
+  orders        orders[]
+  productsqna   productsqna[]
+  promo_code    promo_code[]
+  review        review[]
+}
