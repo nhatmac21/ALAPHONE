@@ -9,8 +9,6 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Alert from '@mui/material/Alert';
 
-const emptyVariant = { color: '', storage: '', RAM: '', ROM: '', image: '' };
-
 // Sửa type cho variant
 interface Variant {
   color: string;
@@ -18,7 +16,10 @@ interface Variant {
   RAM: string;
   ROM: string;
   image: string;
+  file?: File; // Thêm thuộc tính file
 }
+
+const emptyVariant: Variant = { color: '', storage: '', RAM: '', ROM: '', image: '', file: undefined };
 
 export default function AddProductPage() {
   const [product, setProduct] = useState({
@@ -35,8 +36,17 @@ export default function AddProductPage() {
 
   // Sửa lại hàm handleVariantChange để nhận cả input và textarea
   const handleVariantChange = (idx: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name === "file") return; // Không xử lý file ở đây
     const newVariants = [...variants];
-    newVariants[idx][e.target.name as keyof Variant] = e.target.value;
+    newVariants[idx][name as keyof Omit<Variant, "file">] = value;
+    setVariants(newVariants);
+  };
+
+  // Thêm hàm xử lý file input cho biến thể
+  const handleVariantFileChange = (idx: number, file?: File) => {
+    const newVariants = [...variants];
+    newVariants[idx].file = file;
     setVariants(newVariants);
   };
 
@@ -51,7 +61,7 @@ export default function AddProductPage() {
       setError('Vui lòng nhập đầy đủ thông tin sản phẩm chính!');
       return;
     }
-    if (variants.some(v => !v.color || !v.storage || !v.RAM || !v.ROM || !v.image)) {
+    if (variants.some(v => !v.color || !v.storage || !v.RAM || !v.ROM || (!v.image && !v.file))) {
       setError('Vui lòng nhập đầy đủ thông tin cho tất cả biến thể!');
       return;
     }
@@ -60,6 +70,22 @@ export default function AddProductPage() {
       const userData = localStorage.getItem('userData');
       if (!userData) throw new Error('Chưa đăng nhập!');
       const user = JSON.parse(userData);
+      const uploadedVariants = await Promise.all(variants.map(async (v) => {
+        let imageUrl = v.image;
+        if (v.file) {
+          const formData = new FormData();
+          formData.append('file', v.file);
+          const res = await fetch('/api/upload', { method: 'POST', body: formData });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error('Lỗi upload ảnh! ' + (err.error || res.statusText));
+          }
+          const data = await res.json();
+          if (!data.url) throw new Error('Lỗi upload ảnh!');
+          imageUrl = data.url;
+        }
+        return { ...v, image: imageUrl, file: undefined };
+      }));
       const res = await fetch('/api/product/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +97,7 @@ export default function AddProductPage() {
             stockQuantity: Number(product.stockQuantity),
             warranty: product.warranty || undefined,
           },
-          variants,
+          variants: uploadedVariants,
         }),
       });
       const data = await res.json();
@@ -82,8 +108,8 @@ export default function AddProductPage() {
       } else {
         setError(data.message || 'Lỗi thêm sản phẩm!');
       }
-    } catch {
-      setError('Lỗi kết nối server!');
+    } catch (err: any) {
+      setError(err.message || 'Lỗi kết nối server!');
     } finally {
       setLoading(false);
     }
@@ -109,16 +135,83 @@ export default function AddProductPage() {
           <TextField label="Bảo hành (yyyy-mm-dd)" name="warranty" value={product.warranty} onChange={handleProductChange} fullWidth />
           <Box>
             <Typography fontWeight={600} color="primary" mb={1}>Biến thể sản phẩm</Typography>
-            {variants.map((v, idx) => (
-              <Stack key={idx} direction={{xs:'column',sm:'row'}} spacing={2} alignItems="center" mb={2}>
-                <TextField label="Màu sắc" name="color" value={v.color} onChange={e => handleVariantChange(idx, e)} required fullWidth />
-                <TextField label="Bộ nhớ" name="storage" value={v.storage} onChange={e => handleVariantChange(idx, e)} required fullWidth />
-                <TextField label="RAM" name="RAM" value={v.RAM} onChange={e => handleVariantChange(idx, e)} required fullWidth />
-                <TextField label="ROM" name="ROM" value={v.ROM} onChange={e => handleVariantChange(idx, e)} required fullWidth />
-                <TextField label="Ảnh (URL)" name="image" value={v.image} onChange={e => handleVariantChange(idx, e)} required fullWidth />
-                <IconButton color="error" onClick={() => removeVariant(idx)} disabled={variants.length === 1}><DeleteIcon /></IconButton>
-              </Stack>
-            ))}
+            <Box sx={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 8 }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left' }}>Màu sắc</th>
+                    <th style={{ textAlign: 'left' }}>Bộ nhớ</th>
+                    <th style={{ textAlign: 'left' }}>RAM</th>
+                    <th style={{ textAlign: 'left' }}>ROM</th>
+                    <th style={{ textAlign: 'left' }}>Ảnh</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {variants.map((v, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <TextField label="Màu sắc" placeholder="Màu sắc" name="color" value={v.color} onChange={e => handleVariantChange(idx, e)} required fullWidth size="small" />
+                      </td>
+                      <td>
+                        <TextField label="Bộ nhớ" placeholder="Bộ nhớ" name="storage" value={v.storage} onChange={e => handleVariantChange(idx, e)} required fullWidth size="small" />
+                      </td>
+                      <td>
+                        <TextField label="RAM" placeholder="RAM" name="RAM" value={v.RAM} onChange={e => handleVariantChange(idx, e)} required fullWidth size="small" />
+                      </td>
+                      <td>
+                        <TextField label="ROM" placeholder="ROM" name="ROM" value={v.ROM} onChange={e => handleVariantChange(idx, e)} required fullWidth size="small" />
+                      </td>
+                      <td>
+                        <Box>
+                          <Button
+                            variant="outlined"
+                            component="label"
+                            sx={{ minWidth: 80, fontSize: 12, p: 0.5 }}
+                          >
+                            {v.file ? "Đã chọn" : "Chọn ảnh"}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              hidden
+                              onChange={e => handleVariantFileChange(idx, e.target.files?.[0])}
+                            />
+                          </Button>
+                          {v.file && (
+                            <Typography variant="caption" display="block" mt={0.5}>
+                              {v.file.name}
+                            </Typography>
+                          )}
+                          {v.file && (
+                            <Box mt={0.5}>
+                              <img
+                                src={URL.createObjectURL(v.file)}
+                                alt="preview"
+                                style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4 }}
+                              />
+                            </Box>
+                          )}
+                          {!v.file && (
+                            <TextField
+                              label="URL"
+                              placeholder="URL ảnh"
+                              name="image"
+                              value={v.image}
+                              onChange={e => handleVariantChange(idx, e)}
+                              size="small"
+                              fullWidth
+                            />
+                          )}
+                        </Box>
+                      </td>
+                      <td>
+                        <IconButton color="error" onClick={() => removeVariant(idx)} disabled={variants.length === 1}><DeleteIcon /></IconButton>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Box>
             <Button onClick={addVariant} variant="outlined" color="primary" sx={{ mt: 1 }}>+ Thêm biến thể</Button>
           </Box>
           <Button type="submit" variant="contained" color="primary" size="large" disabled={loading}>

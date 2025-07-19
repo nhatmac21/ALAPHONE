@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
+import LogoutIcon from '@mui/icons-material/Logout';
+import GroupIcon from '@mui/icons-material/Group';
 
 interface User {
   UserID: number;
@@ -22,6 +24,8 @@ export default function AdminUserPage() {
   const [error, setError] = useState("");
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  // Thêm state xác nhận xóa
+  const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
   // Chỉ cho phép admin truy cập
   useEffect(() => {
@@ -82,6 +86,19 @@ export default function AdminUserPage() {
     else setError(data.message || "Lỗi lưu user!");
   };
 
+  // Thêm hàm xóa user
+  const handleDelete = async () => {
+    if (!deleteUser) return;
+    const res = await fetch("/api/user", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ UserID: deleteUser.UserID }),
+    });
+    const data = await res.json();
+    if (data.success) setDeleteUser(null);
+    else setError(data.message || "Lỗi xóa user!");
+  };
+
   if (isAdmin === false) {
     return (
       <main className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -91,10 +108,24 @@ export default function AdminUserPage() {
   }
   if (isAdmin === null) return null;
 
+  // Sidebar cho admin
   return (
-    <main className="min-h-screen bg-gray-900 py-8">
-      <div className="container mx-auto px-4 max-w-5xl">
-        <Typography variant="h4" fontWeight={700} color="primary" align="center" mb={4}>
+    <Box display="flex" minHeight="100vh" bgcolor="#111827">
+      {/* Sidebar */}
+      <Box width={240} bgcolor="#18232e" color="#fff" p={3} boxShadow={6} display="flex" flexDirection="column" justifyContent="space-between">
+        <Box>
+          <Typography fontWeight={900} fontSize={24} color="#a3e635" mb={4} textAlign="center">Admin Panel</Typography>
+          <Button startIcon={<GroupIcon />} fullWidth sx={{ justifyContent: 'flex-start', color: '#a3e635', fontWeight: 700, mb: 2, bgcolor: '#232b36' }} disabled>
+            Quản lý người dùng
+          </Button>
+        </Box>
+        <Button startIcon={<LogoutIcon />} fullWidth sx={{ color: '#ef4444', fontWeight: 700, mt: 2, bgcolor: '#232b36' }} onClick={() => { localStorage.clear(); router.replace('/login'); }}>
+          Đăng xuất
+        </Button>
+      </Box>
+      {/* Main content */}
+      <Box flex={1} p={4} sx={{ marginLeft: '240px' }}>
+        <Typography variant="h4" fontWeight={700} color="#a3e635" align="center" mb={4}>
           Quản lý người dùng (Admin)
         </Typography>
         <Box display="flex" justifyContent="flex-end" mb={2}>
@@ -135,6 +166,9 @@ export default function AdminUserPage() {
                       <Button variant="outlined" color="primary" size="small" onClick={() => handleOpen(u)}>
                         Sửa
                       </Button>
+                      <Button variant="outlined" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleteUser(u)}>
+                        Xóa
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -160,7 +194,16 @@ export default function AdminUserPage() {
             <Button variant="contained" color="success" onClick={handleSubmit}>{editUser ? "Lưu" : "Tạo mới"}</Button>
           </DialogActions>
         </Dialog>
-      </div>
-    </main>
+        {/* Thêm Dialog xác nhận xóa */}
+        <Dialog open={!!deleteUser} onClose={() => setDeleteUser(null)}>
+          <DialogTitle>Xác nhận xóa người dùng</DialogTitle>
+          <DialogContent>Bạn có chắc chắn muốn xóa user "{deleteUser?.userName}"?</DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteUser(null)}>Hủy</Button>
+            <Button color="error" variant="contained" onClick={handleDelete}>Xóa</Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Box>
   );
 } 

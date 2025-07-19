@@ -42,4 +42,31 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   } catch (error) {
     return NextResponse.json({ success: false, message: 'Lỗi lấy chi tiết sản phẩm!' }, { status: 500 });
   }
+}
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const productID = Number(params.id);
+    if (!productID) {
+      return NextResponse.json({ success: false, message: 'Thiếu ProductID!' }, { status: 400 });
+    }
+    const body = await req.json();
+    const updateData: any = {};
+    if (typeof body.name === 'string') updateData.name = body.name;
+    if (typeof body.price === 'number') updateData.price = body.price;
+    if (typeof body.brand === 'string') updateData.brand = body.brand;
+    if (typeof body.description === 'string') updateData.description = body.description;
+    if (typeof body.stockQuantity === 'number') updateData.stockQuantity = body.stockQuantity;
+    if (typeof body.isActive === 'boolean') updateData.isActive = body.isActive;
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ success: false, message: 'Không có trường nào hợp lệ để cập nhật!' }, { status: 400 });
+    }
+    const updated = await prisma.product.update({
+      where: { ProductID: productID },
+      data: updateData,
+    });
+    return NextResponse.json({ success: true, product: updated });
+  } catch (error) {
+    return NextResponse.json({ success: false, message: 'Lỗi cập nhật sản phẩm!' }, { status: 500 });
+  }
 } 

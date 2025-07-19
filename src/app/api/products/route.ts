@@ -5,8 +5,11 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
-    // Luôn trả về toàn bộ sản phẩm, không phân trang, không đọc query string
+    const { searchParams } = new URL(req.url);
+    const showInactive = searchParams.get('showInactive') === 'true';
+    // Chỉ trả về sản phẩm đang kinh doanh, trừ khi có showInactive=true
     const products = await prisma.product.findMany({
+      where: showInactive ? {} : { isActive: true },
       include: {
         productvariant: {
           select: {

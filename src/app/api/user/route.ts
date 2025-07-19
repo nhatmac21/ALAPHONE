@@ -32,9 +32,28 @@ export async function PUT(req: Request) {
   try {
     const data = await req.json();
     if (!data.UserID) return NextResponse.json({ success: false, message: 'Thiếu UserID!' }, { status: 400 });
-    const user = await prisma.user.update({ where: { UserID: data.UserID }, data });
-    return NextResponse.json({ success: true, user });
+    // Chỉ lấy các trường hợp lệ để update
+    const updateData: any = {};
+    const allowed = ['userName', 'fullName', 'email', 'phone', 'address', 'birthDate', 'gender'];
+    for (const key of allowed) {
+      if (data[key] !== undefined) updateData[key] = data[key];
+    }
+    updateData.updatedAt = new Date();
+    const user = await prisma.user.update({ where: { UserID: data.UserID }, data: updateData });
+    return NextResponse.json(user);
   } catch (error) {
-    return NextResponse.json({ success: false, message: 'Lỗi cập nhật user!' }, { status: 500 });
+    return NextResponse.json({ success: false, message: 'Lỗi cập nhật user!', error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+  }
+}
+
+// Xóa mềm user
+export async function DELETE(req: Request) {
+  try {
+    const { UserID } = await req.json();
+    if (!UserID) return NextResponse.json({ success: false, message: 'Thiếu UserID!' }, { status: 400 });
+    await prisma.user.update({ where: { UserID }, data: { isDeleted: true } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ success: false, message: 'Lỗi xóa user!' }, { status: 500 });
   }
 } 

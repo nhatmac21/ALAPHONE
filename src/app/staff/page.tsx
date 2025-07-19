@@ -7,13 +7,24 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import StoreIcon from '@mui/icons-material/Store';
+import RestoreIcon from '@mui/icons-material/Restore';
+import BlockIcon from '@mui/icons-material/Block';
 import { useRouter } from "next/navigation";
 
 export default function StaffDashboard() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+  const [showInactive, setShowInactive] = useState(false);
   const router = useRouter();
+
+  const fetchProducts = () => {
+    setLoading(true);
+    fetch(`/api/products${showInactive ? '?showInactive=true' : ''}`)
+      .then(res => res.json())
+      .then(data => setProducts(data.products || []))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     // Kiểm tra role
@@ -27,12 +38,28 @@ export default function StaffDashboard() {
       router.replace("/");
       return;
     }
-    // Lấy danh sách sản phẩm
-    fetch("/api/products")
-      .then(res => res.json())
-      .then(data => setProducts(data.products || []))
-      .finally(() => setLoading(false));
-  }, [router]);
+    fetchProducts();
+    // eslint-disable-next-line
+  }, [router, showInactive]);
+
+  const handleSetActive = async (productID: number, isActive: boolean) => {
+    try {
+      const res = await fetch(`/api/product/${productID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSnackbar({ open: true, message: isActive ? 'Đã khôi phục sản phẩm!' : 'Đã ngừng kinh doanh sản phẩm!' });
+        fetchProducts();
+      } else {
+        setSnackbar({ open: true, message: data.message || 'Lỗi thao tác!' });
+      }
+    } catch {
+      setSnackbar({ open: true, message: 'Lỗi kết nối server!' });
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -73,6 +100,14 @@ export default function StaffDashboard() {
       {/* Main content */}
       <Box flex={1} p={4} sx={{ marginLeft: '240px' }}>
         <Typography variant="h4" fontWeight={800} color="#a3e635" mb={4}>Quản lý sản phẩm</Typography>
+        <Stack direction="row" spacing={2} mb={2}>
+          <Button variant={!showInactive ? "contained" : "outlined"} color="success" onClick={() => setShowInactive(false)}>
+            Đang kinh doanh
+          </Button>
+          <Button variant={showInactive ? "contained" : "outlined"} color="warning" onClick={() => setShowInactive(true)}>
+            Ngừng kinh doanh
+          </Button>
+        </Stack>
         <TableContainer component={Paper} sx={{ bgcolor: '#232b36', color: '#fff', borderRadius: 3, boxShadow: 6 }}>
           <Table>
             <TableHead>
@@ -90,20 +125,31 @@ export default function StaffDashboard() {
                 <TableRow><TableCell colSpan={6} align="center" sx={{ color: '#fff' }}>Đang tải...</TableCell></TableRow>
               ) : products.length === 0 ? (
                 <TableRow><TableCell colSpan={6} align="center" sx={{ color: '#fff' }}>Không có sản phẩm nào.</TableCell></TableRow>
-              ) : products.map((p: any) => (
-                <TableRow key={p.ProductID} hover>
-                  <TableCell sx={{ color: '#fff', fontWeight: 700 }}>{p.name}</TableCell>
-                  <TableCell sx={{ color: '#fff' }}>{p.brand}</TableCell>
-                  <TableCell sx={{ color: '#fff' }}>{Number(p.price).toLocaleString('vi-VN')} ₫</TableCell>
-                  <TableCell sx={{ color: '#fff' }}>{p.stockQuantity ?? 0}</TableCell>
-                  <TableCell sx={{ color: p.stockQuantity > 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{p.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng'}</TableCell>
-                  <TableCell>
-                    <IconButton color="primary" onClick={() => router.push(`/staff/edit-product/${p.ProductID}`)}>
-                      <AddIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+              ) : products
+                  .filter((p: any) => showInactive ? p.isActive === false : p.isActive !== false)
+                  .map((p: any) => (
+                    <TableRow key={p.ProductID} hover>
+                      <TableCell sx={{ color: '#fff', fontWeight: 700 }}>{p.name}</TableCell>
+                      <TableCell sx={{ color: '#fff' }}>{p.brand}</TableCell>
+                      <TableCell sx={{ color: '#fff' }}>{Number(p.price).toLocaleString('vi-VN')} ₫</TableCell>
+                      <TableCell sx={{ color: '#fff' }}>{p.stockQuantity ?? 0}</TableCell>
+                      <TableCell sx={{ color: p.isActive ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{p.isActive ? (p.stockQuantity > 0 ? 'Còn hàng' : 'Hết hàng') : 'Ngừng kinh doanh'}</TableCell>
+                      <TableCell>
+                        <Button variant="outlined" color="info" size="small" sx={{ mr: 1 }} onClick={() => router.push(`/staff/edit-product/${p.ProductID}`)}>
+                          Cập nhật
+                        </Button>
+                        {p.isActive ? (
+                          <IconButton color="error" title="Ngừng kinh doanh" onClick={() => handleSetActive(p.ProductID, false)}>
+                            <BlockIcon />
+                          </IconButton>
+                        ) : (
+                          <IconButton color="success" title="Khôi phục" onClick={() => handleSetActive(p.ProductID, true)}>
+                            <RestoreIcon />
+                          </IconButton>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
             </TableBody>
           </Table>
         </TableContainer>

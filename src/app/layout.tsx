@@ -20,11 +20,7 @@ export const metadata: Metadata = {
   description: 'Website bán điện thoại giống TGDD, FPTShop',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
       <body className="bg-gray-50">

@@ -119,6 +119,7 @@ model product {
   updatedAt      DateTime?        @db.DateTime(0)
   brand          String?          @db.VarChar(100)
   warranty       DateTime?        @db.DateTime(0)
+  isActive       Boolean?         @default(true)
   cartitems      cartitems[]
   productvariant productvariant[]
   promo_code     promo_code[]

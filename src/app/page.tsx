@@ -14,6 +14,8 @@ import TextField from '@mui/material/TextField';
 import Link from 'next/link';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import Snackbar from '@mui/material/Snackbar';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
 
 interface ProductVariant {
   VariantID: number;
@@ -39,6 +41,7 @@ interface Product {
     limit: number;
     used: number;
   }[];
+  category?: string; // Thêm trường category
 }
 
 interface User {
@@ -61,6 +64,14 @@ export default function HomePage() {
   const [pageSize] = useState(8);
   const [total, setTotal] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  // Thêm filter
+  const [selectedBrand, setSelectedBrand] = useState('Tất cả');
+  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+
+  // Danh mục cố định
+  const categories = ['Tất cả', 'Điện thoại', 'Laptop', 'Tablet'];
+  // Lấy danh sách hãng từ sản phẩm
+  const brands = ['Tất cả', ...Array.from(new Set(products.map(p => p.brand).filter(Boolean)))];
 
   useEffect(() => {
     setLoading(true);
@@ -101,11 +112,13 @@ export default function HomePage() {
     }));
   };
 
-  // Lọc sản phẩm theo tên hoặc hãng
-  const filteredProducts = (products || []).filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.brand && p.brand.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Lọc sản phẩm theo tên, hãng, danh mục
+  const filteredProducts = (products || []).filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.brand && p.brand.toLowerCase().includes(search.toLowerCase()));
+    const matchBrand = selectedBrand === 'Tất cả' || p.brand === selectedBrand;
+    const matchCategory = selectedCategory === 'Tất cả' || (p.category === selectedCategory);
+    return matchSearch && matchBrand && matchCategory;
+  });
 
   function buyNow(product: Product) {
     const cart = [{ ...product, quantity: 1 }];
@@ -116,39 +129,41 @@ export default function HomePage() {
   return (
     <main className="min-h-screen" style={{ background: '#111827', color: '#fff' }}>
       <div className="container mx-auto px-4">
-        {user && (
-          <Box bgcolor="#18232e" borderRadius={4} p={3} mb={4} maxWidth={420} mx="auto" boxShadow={6} display="flex" flexDirection="column" alignItems="center" gap={2}>
-            <Box bgcolor="#a3e63522" borderRadius="50%" width={64} height={64} display="flex" alignItems="center" justifyContent="center" mb={1}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="#a3e635" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="8" r="4" />
-                <ellipse cx="12" cy="17" rx="7" ry="4" />
-              </svg>
-            </Box>
-            <Typography fontWeight={800} fontSize={22} color="#a3e635" align="center">
-              Chào mừng, {user.fullName || user.name || user.userName || ''}!
-            </Typography>
-            <Typography fontSize={15} color="#fff" align="center" mb={1}>
-              Số điện thoại: <span style={{ color: '#a3e635' }}>{user.phone}</span>
-            </Typography>
-            <Link href="/order">
-              <Button variant="contained" color="success" sx={{ fontWeight: 700, borderRadius: 3, px: 4, py: 1.2, fontSize: 16, background: 'linear-gradient(90deg,#22c55e,#4ade80)', color: 'white', '&:hover': { background: 'linear-gradient(90deg,#4ade80,#22c55e)' } }}>
-                XEM LỊCH SỬ ĐƠN HÀNG
-              </Button>
-            </Link>
-          </Box>
-        )}
+        {/* Đã xóa block chào mừng user */}
         <Typography variant="h4" fontWeight={700} color="primary" align="center" mb={4}>
           Danh sách điện thoại
         </Typography>
-        <Box mb={3} display="flex" justifyContent="center">
+        <Box mb={3} display="flex" flexDirection={{xs:'column',sm:'row'}} justifyContent="center" alignItems="center" gap={2}>
           <TextField
             label="Tìm kiếm sản phẩm..."
             variant="outlined"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            sx={{ width: 350, input: { color: '#fff' }, label: { color: '#a3e635' }, fieldset: { borderColor: '#22c55e' } }}
+            sx={{ width: 250, input: { color: '#fff' }, label: { color: '#a3e635' }, fieldset: { borderColor: '#22c55e' } }}
             InputLabelProps={{ style: { color: '#a3e635' } }}
           />
+          <TextField
+            select
+            label="Danh mục"
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value)}
+            sx={{ width: 150, background: '#1e293b', borderRadius: 2 }}
+            SelectProps={{ native: true }}
+            InputLabelProps={{ style: { color: '#a3e635' } }}
+          >
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </TextField>
+          <TextField
+            select
+            label="Hãng"
+            value={selectedBrand}
+            onChange={e => setSelectedBrand(e.target.value)}
+            sx={{ width: 150, background: '#1e293b', borderRadius: 2 }}
+            SelectProps={{ native: true }}
+            InputLabelProps={{ style: { color: '#a3e635' } }}
+          >
+            {brands.map(b => <option key={b} value={b}>{b}</option>)}
+          </TextField>
         </Box>
         {loading ? (
           <Typography align="center" color="#fff">Đang tải dữ liệu...</Typography>
@@ -159,7 +174,6 @@ export default function HomePage() {
               const v = p.productvariant?.[0];
               const images = v?.images && v.images.length > 0 ? v.images : v?.image ? [v.image] : [];
               const imgIdx = imgIndexes[p.ProductID] || 0;
-              // Lấy promoCode đầu tiên (ưu tiên)
               const promoCode = p.promoCodes && p.promoCodes[0];
               let discount = 0;
               let priceAfter = p.price;
@@ -182,6 +196,19 @@ export default function HomePage() {
                 <Link key={p.ProductID} href={`/product/${p.ProductID}`} style={{ textDecoration: 'none' }}>
                   <Card sx={{ boxShadow: 6, borderRadius: 3, transition: '0.3s', '&:hover': { boxShadow: 12, transform: 'scale(1.03)' }, display: 'flex', flexDirection: 'column', minHeight: 480, height: 480, background: '#1e293b', color: '#fff' }}>
                     <Box position="relative" bgcolor="#0f172a">
+                      {/* Block giảm giá nổi bật ở góc trên bên trái ảnh */}
+                      {promoCode && promoCode.promotion && (
+                        <Box position="absolute" top={8} left={8} zIndex={3} bgcolor="#fff8e1" borderRadius={2} px={1.2} py={0.5} boxShadow={2} display="flex" alignItems="center" gap={0.5}>
+                          <LocalFireDepartmentIcon sx={{ color: '#ff9800', fontSize: 18 }} />
+                          <Typography fontWeight={800} color="error" fontSize={15}>
+                            {priceAfter.toLocaleString('vi-VN')}₫
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through', fontSize: 13, ml: 0.5 }}>
+                            {Number(p.price).toLocaleString('vi-VN')}₫
+                          </Typography>
+                          <Typography variant="body2" color="error" fontWeight={700} ml={0.5} fontSize={13}>{promoText}</Typography>
+                        </Box>
+                      )}
                       {images.length > 1 && (
                         <IconButton onClick={() => handlePrevImg(p.ProductID, images)} sx={{ position: 'absolute', top: '50%', left: 8, zIndex: 2, bgcolor: 'white', '&:hover': { bgcolor: '#bbf7d0' } }} size="small">
                           <ChevronLeftIcon />
@@ -189,10 +216,10 @@ export default function HomePage() {
                       )}
                       <CardMedia
                         component="img"
-                        height="200"
+                        height="240"
                         image={images[imgIdx] || "/no-image.png"}
                         alt={p.name}
-                        sx={{ objectFit: 'cover', width: '100%', height: 200, background: '#fff', borderRadius: 2, boxShadow: 1 }}
+                        sx={{ objectFit: 'contain', width: '100%', height: 240, background: '#1e293b', borderRadius: 3, boxShadow: 1, p: 1 }}
                       />
                       {images.length > 1 && (
                         <IconButton onClick={() => handleNextImg(p.ProductID, images)} sx={{ position: 'absolute', top: '50%', right: 8, zIndex: 2, bgcolor: 'white', '&:hover': { bgcolor: '#bbf7d0' } }} size="small">
@@ -200,38 +227,22 @@ export default function HomePage() {
                         </IconButton>
                       )}
                     </Box>
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2 }}>
+                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2, mt: 0.5 }}>
                       <div>
                         <Typography variant="h6" fontWeight={700} color="primary" mb={1}>{p.name}</Typography>
-                        {/* Block giảm giá nổi bật */}
-                        {promoCode && promoCode.promotion && (
-                          <Box mb={1} p={1.2} borderRadius={2} bgcolor="#f8fff8" border="2px solid #4caf50" boxShadow={2} display="flex" alignItems="center" gap={1}>
-                            <LocalFireDepartmentIcon sx={{ color: '#ff9800', fontSize: 20 }} />
-                            <Typography variant="h6" fontWeight={800} color="error" mr={1} fontSize={18}>
-                              {priceAfter.toLocaleString('vi-VN')}₫
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                              {Number(p.price).toLocaleString('vi-VN')}₫
-                            </Typography>
-                            <Typography variant="body2" color="error" fontWeight={700} ml={1}>{promoText}</Typography>
-                            {slotText && (
-                              <Typography variant="body2" color="warning.main" fontWeight={700} ml={1}>{slotText}</Typography>
-                            )}
-                          </Box>
-                        )}
-                        {/* End block giảm giá */}
                         <Typography variant="h5" fontWeight={800} color="success.main" mb={1} fontSize={20}>{p.price?.toLocaleString("vi-VN")} ₫</Typography>
                         <Typography fontSize={13} color="#fff" mb={0.5}>Hãng: {p.brand}</Typography>
                         <Typography fontSize={13} color="#fff" mb={0.5}>RAM: {v?.RAM || "-"} | ROM: {v?.ROM || "-"}</Typography>
                         <Typography fontSize={13} color="#fff" mb={0.5}>Màu sắc: {v?.color || "-"}</Typography>
                       </div>
+                      {/* Nhóm nút nhỏ dạng icon */}
                       <Box mt={2} display="flex" justifyContent="center" gap={1}>
-                        <Button variant="contained" color="primary" size="medium" sx={{ fontWeight: 700, boxShadow: 4, borderRadius: 2, minWidth: 90, fontSize: 14, px: 2, py: 1, letterSpacing: 1, background: 'linear-gradient(90deg,#22c55e,#4ade80,#22d3ee)', color: 'white', '&:hover': { background: 'linear-gradient(90deg,#22d3ee,#4ade80,#22c55e)' } }} onClick={e => { e.preventDefault(); addToCart(p); }}>
-                          Thêm vào giỏ hàng
-                        </Button>
-                        <Button variant="outlined" color="success" size="medium" sx={{ fontWeight: 700, borderRadius: 2, minWidth: 90, fontSize: 14, px: 2, py: 1, letterSpacing: 1, borderColor: '#22c55e', color: '#22c55e', '&:hover': { background: '#bbf7d0', borderColor: '#22c55e' } }} onClick={e => { e.preventDefault(); buyNow(p); }}>
-                          Mua ngay
-                        </Button>
+                        <IconButton color="primary" size="small" sx={{ bgcolor: '#22c55e', color: 'white', '&:hover': { bgcolor: '#16a34a' }, borderRadius: 2 }} onClick={e => { e.preventDefault(); addToCart(p); }} title="Thêm vào giỏ hàng">
+                          <AddShoppingCartIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton color="warning" size="small" sx={{ bgcolor: '#fbbf24', color: 'white', '&:hover': { bgcolor: '#f59e42' }, borderRadius: 2 }} onClick={e => { e.preventDefault(); buyNow(p); }} title="Mua ngay">
+                          <FlashOnIcon fontSize="small" />
+                        </IconButton>
                       </Box>
                     </CardContent>
                   </Card>

@@ -16,6 +16,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import AddIcon from '@mui/icons-material/Add';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: number;
@@ -31,6 +32,7 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -49,9 +51,10 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
+    localStorage.removeItem('cart'); // Xóa luôn giỏ hàng khi đăng xuất
     setUser(null);
     setAnchorEl(null);
-    window.location.reload();
+    window.location.href = '/'; // Chuyển về trang chủ
   };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -66,11 +69,19 @@ export default function Header() {
     <AppBar position="static" elevation={0} sx={{ background: '#111827', boxShadow: 'none', borderBottom: 'none', mb: 0 }}>
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Box display="flex" alignItems="center" gap={1}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <Typography variant="h5" fontWeight={900} sx={{ color: '#43a047', letterSpacing: 1 }}>
-              Alaphone
-            </Typography>
-          </Link>
+          <Typography
+            variant="h5"
+            fontWeight={900}
+            sx={{ color: '#43a047', letterSpacing: 1, cursor: 'pointer' }}
+            onClick={() => {
+              if (!user) router.push('/');
+              else if (user.role === 'admin' || user.role === 'ADMIN') router.push('/admin');
+              else if (user.role === 'staff') router.push('/staff');
+              else router.push('/');
+            }}
+          >
+            Alaphone
+          </Typography>
         </Box>
         <Box display="flex" alignItems="center" gap={2}>
           {isLoading ? null : user ? (
@@ -125,6 +136,7 @@ export default function Header() {
                     <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
                       <LogoutIcon fontSize="small" />
                       Đăng xuất
+                      
                     </MenuItem>
                   </Menu>
                 </>
@@ -132,7 +144,7 @@ export default function Header() {
                 <>
                   <Box display="flex" alignItems="center" gap={1}>
                     <AccountCircleIcon color="primary" />
-                    <Typography color="primary" fontWeight={600}>
+                    <Typography color="primary" fontWeight={600} sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: '#22c55e' } }} onClick={() => router.push('/user')}>
                       {user.fullName || user.name || user.userName || 'User'}
                     </Typography>
                   </Box>

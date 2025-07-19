@@ -43,20 +43,25 @@ export default function LoginPage() {
         },
         body: JSON.stringify({ phone, password }),
       });
-
+      
       const data: LoginResponse = await response.json();
-
+      
       if (data.success && data.user && data.token) {
         // Đảm bảo user có trường id (id = UserID)
         const userToSave = { ...data.user, id: (data.user as any).UserID ?? data.user.id };
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('userData', JSON.stringify(userToSave));
         // Chuyển hướng theo role
-        if (data.user.role === 'staff') {
-          router.push('/staff');
+        
+        if (data.user.role === 'admin' || data.user.role === 'ADMIN') {
+          window.location.href='/admin';
+          
+        } else if (data.user.role === 'staff') {
+          window.location.href='/staff';
         } else {
-          router.push('/');
+          window.location.href='/';
         }
+       
       } else {
         setError(data.message || 'Đăng nhập thất bại!');
       }
@@ -69,41 +74,41 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-md">
-        <div className="bg-white rounded-lg shadow p-8">
-          <h1 className="text-3xl font-bold text-green-600 mb-6 text-center">Đăng nhập</h1>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#111827' }}>
+      <div className="w-full max-w-md px-4">
+        <div style={{ background: '#18232e', borderRadius: 16, boxShadow: '0 4px 32px #0008', padding: 36, border: '2px solid #22c55e' }}>
+          <h1 style={{ fontSize: 32, fontWeight: 900, color: '#a3e635', marginBottom: 28, textAlign: 'center', letterSpacing: 1 }}>Đăng nhập</h1>
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block font-semibold mb-1">Số điện thoại</label>
-              <input 
-                type="text" 
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" 
-                value={phone} 
-                onChange={e => setPhone(e.target.value)} 
+              <label style={{ color: '#a3e635', fontWeight: 700, marginBottom: 6, display: 'block', fontSize: 16 }}>Số điện thoại</label>
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2 text-lg"
+                style={{ background: '#232b36', color: '#fff', borderColor: '#22c55e', outline: 'none', fontWeight: 600 }}
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
                 placeholder="Nhập số điện thoại"
                 disabled={isLoading}
+                autoFocus
               />
             </div>
             <div>
-              <label className="block font-semibold mb-1">Mật khẩu</label>
-              <input 
-                type="password" 
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
+              <label style={{ color: '#a3e635', fontWeight: 700, marginBottom: 6, display: 'block', fontSize: 16 }}>Mật khẩu</label>
+              <input
+                type="password"
+                className="w-full border rounded px-3 py-2 text-lg"
+                style={{ background: '#232b36', color: '#fff', borderColor: '#22c55e', outline: 'none', fontWeight: 600 }}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 placeholder="Nhập mật khẩu"
                 disabled={isLoading}
               />
             </div>
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-            <button 
-              type="submit" 
-              className={`w-full font-semibold py-2 px-4 rounded transition ${
-                isLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-green-500 hover:bg-green-600 text-white'
-              }`}
+            {error && <div style={{ color: '#ef4444', fontWeight: 700, fontSize: 15, marginTop: 2 }}>{error}</div>}
+            <button
+              type="submit"
+              className="w-full font-bold py-2 px-4 rounded transition text-lg"
+              style={{ background: isLoading ? '#94a3b8' : 'linear-gradient(90deg,#22c55e,#4ade80)', color: '#fff', boxShadow: '0 2px 8px #22c55e44', cursor: isLoading ? 'not-allowed' : 'pointer', letterSpacing: 1 }}
               disabled={isLoading}
             >
               {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
