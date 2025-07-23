@@ -7,10 +7,21 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const showInactive = searchParams.get('showInactive') === 'true';
-    // Chỉ trả về sản phẩm đang kinh doanh, trừ khi có showInactive=true
+
+    // Lấy danh sách sản phẩm bao gồm stockQuantity
     const products = await prisma.product.findMany({
       where: showInactive ? {} : { isActive: true },
-      include: {
+      select: {
+        ProductID: true,
+        name: true,
+        description: true,
+        price: true,
+        stockQuantity: true, // Thêm stockQuantity vào kết quả
+        category: true,
+        createdAt: true,
+        updatedAt: true,
+        isActive: true,
+        brand: true,
         productvariant: {
           select: {
             VariantID: true,

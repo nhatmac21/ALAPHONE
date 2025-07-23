@@ -31,6 +31,7 @@ interface Product {
   name: string;
   price: number;
   brand: string;
+  stockQuantity: number; // Thêm stockQuantity
   productvariant: ProductVariant[];
   promoCodes?: {
     id: number;
@@ -112,7 +113,6 @@ export default function HomePage() {
     }));
   };
 
-
   // Lọc sản phẩm theo tên, hãng, danh mục
   const filteredProducts = (products || []).filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.brand && p.brand.toLowerCase().includes(search.toLowerCase()));
@@ -132,7 +132,6 @@ export default function HomePage() {
   return (
     <main className="min-h-screen" style={{ background: '#111827', color: '#fff' }}>
       <div className="container mx-auto px-4">
-        {/* Đã xóa block chào mừng user */}
         <Typography variant="h4" fontWeight={700} color="primary" align="center" mb={4}>
           Danh sách điện thoại
         </Typography>
@@ -223,13 +222,11 @@ export default function HomePage() {
                   priceAfter = Math.max(0, Number(p.price) - discount);
                   promoText = `-${discount.toLocaleString('vi-VN')}đ`;
                 }
-                // slotText = `Còn ${promoCode.limit - promoCode.used}/${promoCode.limit} suất`;
               }
               return (
                 <Link key={p.ProductID} href={`/product/${p.ProductID}`} style={{ textDecoration: 'none' }}>
                   <Card sx={{ boxShadow: 6, borderRadius: 3, transition: '0.3s', '&:hover': { boxShadow: 12, transform: 'scale(1.03)' }, display: 'flex', flexDirection: 'column', minHeight: 480, height: 480, background: '#1e293b', color: '#fff' }}>
                     <Box position="relative" bgcolor="#0f172a">
-                      {/* Block giảm giá nổi bật ở góc trên bên trái ảnh */}
                       {promoCode && promoCode.promotion && (
                         <Box position="absolute" top={8} left={8} zIndex={3} bgcolor="#fff8e1" borderRadius={2} px={1.2} py={0.5} boxShadow={2} display="flex" alignItems="center" gap={0.5}>
                           <LocalFireDepartmentIcon sx={{ color: '#ff9800', fontSize: 18 }} />
@@ -267,23 +264,26 @@ export default function HomePage() {
                         <Typography fontSize={13} color="#fff" mb={0.5}>Hãng: {p.brand}</Typography>
                         <Typography fontSize={13} color="#fff" mb={0.5}>RAM: {v?.RAM || "-"} | ROM: {v?.ROM || "-"}</Typography>
                         <Typography fontSize={13} color="#fff" mb={0.5}>Màu sắc: {v?.color || "-"}</Typography>
+                        {p.stockQuantity <= 0 ? (
+                          <Typography fontSize={13} color="error" mb={0.5}>Hết hàng</Typography>
+                        ) : null}
                       </div>
-                      {/* Nhóm nút nhỏ dạng icon */}
-                      <Box mt={2} display="flex" justifyContent="center" gap={1}>
-                        <IconButton color="primary" size="small" sx={{ bgcolor: '#22c55e', color: 'white', '&:hover': { bgcolor: '#16a34a' }, borderRadius: 2 }} onClick={e => { e.preventDefault(); addToCart(p); }} title="Thêm vào giỏ hàng">
-                          <AddShoppingCartIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton color="warning" size="small" sx={{ bgcolor: '#fbbf24', color: 'white', '&:hover': { bgcolor: '#f59e42' }, borderRadius: 2 }} onClick={e => { e.preventDefault(); buyNow(p); }} title="Mua ngay">
-                          <FlashOnIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
+                      {p.stockQuantity > 0 ? (
+                        <Box mt={2} display="flex" justifyContent="center" gap={1}>
+                          <IconButton color="primary" size="small" sx={{ bgcolor: '#22c55e', color: 'white', '&:hover': { bgcolor: '#16a34a' }, borderRadius: 2 }} onClick={e => { e.preventDefault(); addToCart(p); }} title="Thêm vào giỏ hàng">
+                            <AddShoppingCartIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton color="warning" size="small" sx={{ bgcolor: '#fbbf24', color: 'white', '&:hover': { bgcolor: '#f59e42' }, borderRadius: 2 }} onClick={e => { e.preventDefault(); buyNow(p); }} title="Mua ngay">
+                            <FlashOnIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ) : null}
                     </CardContent>
                   </Card>
                 </Link>
               );
             })}
           </Box>
-          {/* Pagination UI */}
           <Box display="flex" justifyContent="center" alignItems="center" mt={4} gap={2}>
             <Button variant="outlined" color="success" disabled={page === 1} onClick={() => setPage(page - 1)}>Trước</Button>
             {Array.from({length: Math.ceil(filteredProducts.length / pageSize)}, (_, i) => i + 1).map(pn => (

@@ -23,9 +23,11 @@ export default function StaffDashboard() {
     fetch(`/api/products${showInactive ? '?showInactive=true' : ''}`)
       .then(res => res.json())
       .then(data => setProducts(data.products || []))
+      .catch(() => setSnackbar({ open: true, message: "Lỗi kết nối server!" })) 
       .finally(() => setLoading(false));
+      
   };
-
+console.log("Products loaded:", products);
   useEffect(() => {
     // Kiểm tra role
     const userData = localStorage.getItem("userData");
