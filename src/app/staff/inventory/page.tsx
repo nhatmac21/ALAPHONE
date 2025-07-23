@@ -38,14 +38,16 @@ export default function StaffInventoryPage() {
     fetch("/api/products")
       .then(res => res.json())
       .then(data => {
-        // Flatten all variants with product name
+        // Lấy danh sách sản phẩm từ data.products
+        const arr = Array.isArray(data.products) ? data.products : [];
         const allVariants: ProductVariant[] = [];
-        data.forEach((p: any) => {
+        arr.forEach((p: any) => {
           (p.productvariant || []).forEach((v: any) => {
             allVariants.push({ ...v, product: { name: p.name } });
           });
         });
         setVariants(allVariants);
+        console.log("Variants loaded:", allVariants);
       });
     // Lấy user từ localStorage
     const userData = localStorage.getItem("userData");

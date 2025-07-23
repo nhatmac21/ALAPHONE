@@ -61,7 +61,7 @@ export default function HomePage() {
   const [imgIndexes, setImgIndexes] = useState<{[key:number]:number}>({});
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(8);
+  const [pageSize] = useState(12);
   const [total, setTotal] = useState(0);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
   // Thêm filter
@@ -112,6 +112,7 @@ export default function HomePage() {
     }));
   };
 
+
   // Lọc sản phẩm theo tên, hãng, danh mục
   const filteredProducts = (products || []).filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.brand && p.brand.toLowerCase().includes(search.toLowerCase()));
@@ -119,6 +120,8 @@ export default function HomePage() {
     const matchCategory = selectedCategory === 'Tất cả' || (p.category === selectedCategory);
     return matchSearch && matchBrand && matchCategory;
   });
+  // Phân trang ở frontend nếu backend trả về toàn bộ sản phẩm
+  const pagedProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
 
   function buyNow(product: Product) {
     const cart = [{ ...product, quantity: 1 }];
@@ -147,22 +150,52 @@ export default function HomePage() {
             label="Danh mục"
             value={selectedCategory}
             onChange={e => setSelectedCategory(e.target.value)}
-            sx={{ width: 150, background: '#1e293b', borderRadius: 2 }}
-            SelectProps={{ native: true }}
+            sx={{
+              width: 150,
+              background: '#1e293b',
+              borderRadius: 2,
+              '& .MuiInputBase-input': { color: '#fff' },
+              '& .MuiSelect-icon': { color: '#a3e635' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#22c55e' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#a3e635' },
+              '& .MuiInputLabel-root': { color: '#a3e635' }
+            }}
+            SelectProps={{
+              native: true,
+              sx: {
+                color: '#fff',
+                background: '#1e293b',
+              }
+            }}
             InputLabelProps={{ style: { color: '#a3e635' } }}
           >
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories.map(c => <option key={c} value={c} style={{ color: '#fff', background: '#1e293b' }}>{c}</option>)}
           </TextField>
           <TextField
             select
             label="Hãng"
             value={selectedBrand}
             onChange={e => setSelectedBrand(e.target.value)}
-            sx={{ width: 150, background: '#1e293b', borderRadius: 2 }}
-            SelectProps={{ native: true }}
+            sx={{
+              width: 150,
+              background: '#1e293b',
+              borderRadius: 2,
+              '& .MuiInputBase-input': { color: '#fff' },
+              '& .MuiSelect-icon': { color: '#a3e635' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#22c55e' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#a3e635' },
+              '& .MuiInputLabel-root': { color: '#a3e635' }
+            }}
+            SelectProps={{
+              native: true,
+              sx: {
+                color: '#fff',
+                background: '#1e293b',
+              }
+            }}
             InputLabelProps={{ style: { color: '#a3e635' } }}
           >
-            {brands.map(b => <option key={b} value={b}>{b}</option>)}
+            {brands.map(b => <option key={b} value={b} style={{ color: '#fff', background: '#1e293b' }}>{b}</option>)}
           </TextField>
         </Box>
         {loading ? (
@@ -170,7 +203,7 @@ export default function HomePage() {
         ) : (
           <>
           <Box display="grid" gridTemplateColumns={{xs:'1fr',sm:'1fr 1fr',md:'1fr 1fr 1fr',lg:'1fr 1fr 1fr 1fr'}} gap={3}>
-            {filteredProducts.map((p) => {
+            {pagedProducts.map((p) => {
               const v = p.productvariant?.[0];
               const images = v?.images && v.images.length > 0 ? v.images : v?.image ? [v.image] : [];
               const imgIdx = imgIndexes[p.ProductID] || 0;
@@ -253,10 +286,10 @@ export default function HomePage() {
           {/* Pagination UI */}
           <Box display="flex" justifyContent="center" alignItems="center" mt={4} gap={2}>
             <Button variant="outlined" color="success" disabled={page === 1} onClick={() => setPage(page - 1)}>Trước</Button>
-            {Array.from({length: Math.ceil(total / pageSize)}, (_, i) => i + 1).map(pn => (
+            {Array.from({length: Math.ceil(filteredProducts.length / pageSize)}, (_, i) => i + 1).map(pn => (
               <Button key={pn} variant={pn === page ? "contained" : "outlined"} color="success" onClick={() => setPage(pn)}>{pn}</Button>
             ))}
-            <Button variant="outlined" color="success" disabled={page === Math.ceil(total / pageSize)} onClick={() => setPage(page + 1)}>Sau</Button>
+            <Button variant="outlined" color="success" disabled={page === Math.ceil(filteredProducts.length / pageSize)} onClick={() => setPage(page + 1)}>Sau</Button>
           </Box>
           </>
         )}

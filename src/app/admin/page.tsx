@@ -108,14 +108,45 @@ export default function AdminUserPage() {
   }
   if (isAdmin === null) return null;
 
-  // Sidebar cho admin
+  // Sidebar cố định, main content căn giữa, responsive
   return (
-    <Box display="flex" minHeight="100vh" bgcolor="#111827">
-      {/* Sidebar */}
-      <Box width={240} bgcolor="#18232e" color="#fff" p={3} boxShadow={6} display="flex" flexDirection="column" justifyContent="space-between">
+    <Box minHeight="100vh" bgcolor="#111827">
+      {/* Sidebar cố định */}
+      <Box
+        sx={{
+          width: 240,
+          bgcolor: "#18232e",
+          color: "#fff",
+          p: 3,
+          boxShadow: 6,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          height: "100vh",
+          display: { xs: "none", md: "flex" },
+          flexDirection: "column",
+          justifyContent: "space-between",
+          zIndex: 10
+        }}
+      >
         <Box>
           <Typography fontWeight={900} fontSize={24} color="#a3e635" mb={4} textAlign="center">Admin Panel</Typography>
-          <Button startIcon={<GroupIcon />} fullWidth sx={{ justifyContent: 'flex-start', color: '#a3e635', fontWeight: 700, mb: 2, bgcolor: '#232b36' }} disabled>
+          <Button
+            startIcon={<GroupIcon />}
+            fullWidth
+            sx={{
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 400,
+              mb: 2,
+              bgcolor: '#4d8536', // xanh lá đậm
+              fontSize: 22,
+              borderRadius: 2,
+              boxShadow: 3,
+              '&:hover': { bgcolor: '#357a38' }
+            }}
+            disabled
+          >
             Quản lý người dùng
           </Button>
         </Box>
@@ -124,7 +155,15 @@ export default function AdminUserPage() {
         </Button>
       </Box>
       {/* Main content */}
-      <Box flex={1} p={4} sx={{ marginLeft: '240px' }}>
+      <Box
+        sx={{
+          ml: { xs: 0, md: '240px' },
+          p: { xs: 1, sm: 2, md: 4 },
+          maxWidth: 1200,
+          margin: '0 auto',
+          minHeight: '100vh',
+        }}
+      >
         <Typography variant="h4" fontWeight={700} color="#a3e635" align="center" mb={4}>
           Quản lý người dùng (Admin)
         </Typography>
@@ -138,8 +177,8 @@ export default function AdminUserPage() {
         ) : error ? (
           <Typography color="error" align="center">{error}</Typography>
         ) : (
-          <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
-            <Table>
+          <TableContainer component={Paper} sx={{ borderRadius: 3, maxWidth: '100%', overflowX: 'auto', mx: 'auto' }}>
+            <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell><b>ID</b></TableCell>
