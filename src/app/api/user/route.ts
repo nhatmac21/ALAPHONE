@@ -31,18 +31,42 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const data = await req.json();
-    if (!data.UserID) return NextResponse.json({ success: false, message: 'Thiếu UserID!' }, { status: 400 });
-    // Chỉ lấy các trường hợp lệ để update
+    if (!data.UserID) {
+      return NextResponse.json(
+        { success: false, message: "Thiếu UserID!" },
+        { status: 400 }
+      );
+    }
     const updateData: any = {};
-    const allowed = ['userName', 'fullName', 'email', 'phone', 'address', 'birthDate', 'gender'];
+    const allowed = [
+      "userName",
+      "fullName",
+      "email",
+      "phone",
+      "address",
+      "birthDate",
+      "gender",
+    ];
     for (const key of allowed) {
       if (data[key] !== undefined) updateData[key] = data[key];
     }
     updateData.updatedAt = new Date();
-    const user = await prisma.user.update({ where: { UserID: data.UserID }, data: updateData });
-    return NextResponse.json(user);
+    const user = await prisma.user.update({
+      where: { UserID: data.UserID },
+      data: updateData,
+    });
+
+    // Always return success flag
+    return NextResponse.json({ success: true, user });
   } catch (error) {
-    return NextResponse.json({ success: false, message: 'Lỗi cập nhật user!', error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Lỗi cập nhật user!",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
 }
 

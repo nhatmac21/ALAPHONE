@@ -69,22 +69,27 @@ export default function AdminUserPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
-  const handleSubmit = async () => {
-    setError("");
-    if (!form.userName || !form.fullName || !form.phone) {
-      setError("Vui lòng nhập đầy đủ tên đăng nhập, họ tên, số điện thoại!");
-      return;
-    }
-    const method = editUser ? "PUT" : "POST";
-    const res = await fetch("/api/user", {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editUser ? { ...form, UserID: editUser.UserID } : form),
-    });
-    const data = await res.json();
-    if (data.success) handleClose();
-    else setError(data.message || "Lỗi lưu user!");
-  };
+ const handleSubmit = async () => {
+  setError("");
+  if (!form.userName || !form.fullName || !form.phone) {
+    setError("Vui lòng nhập đầy đủ tên đăng nhập, họ tên, số điện thoại!");
+    return;
+  }
+  const method = editUser ? "PUT" : "POST";
+  const res = await fetch("/api/user", {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(editUser ? { ...form, UserID: editUser.UserID } : form),
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    handleClose(); // Close the dialog
+    // Optionally refresh the user list or show a success notification
+  } else {
+    setError(data.message || "Lỗi lưu user!"); // Show error message
+  }
+};
 
   // Thêm hàm xóa user
   const handleDelete = async () => {
