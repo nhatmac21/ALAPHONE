@@ -46,6 +46,7 @@ export async function PUT(req: Request) {
       "address",
       "birthDate",
       "gender",
+      "password",
     ];
     for (const key of allowed) {
       if (data[key] !== undefined) updateData[key] = data[key];

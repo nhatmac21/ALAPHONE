@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TextField, Button, Box, Typography, MenuItem, Snackbar } from "@mui/material";
+import { TextField, Button, Box, Typography, MenuItem, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 
 interface User {
   UserID: number;
@@ -18,9 +18,15 @@ export default function UserDetailPage() {
   const [form, setForm] = useState<Partial<User>>({});
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+  const [passwordDialog, setPasswordDialog] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     const userData = localStorage.getItem("userData");
+    const storedPassword = localStorage.getItem("password"); // Get stored password
     if (userData) {
       const u = JSON.parse(userData);
       setUser(u);
@@ -44,17 +50,20 @@ export default function UserDetailPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Xử lý birthDate: nếu rỗng thì không gửi lên, nếu có thì chuyển thành ISO string
+      // Birthdate validation: Ensure birthDate is not in the future
       const submitForm = { ...form };
-      if (!submitForm.birthDate) {
-        delete submitForm.birthDate;
-      } else {
-        // Nếu birthDate là yyyy-MM-dd thì chuyển sang ISO string
-        if (/^\d{4}-\d{2}-\d{2}$/.test(submitForm.birthDate)) {
-          submitForm.birthDate = new Date(submitForm.birthDate).toISOString();
+      if (submitForm.birthDate) {
+        const birthDate = new Date(submitForm.birthDate);
+        const today = new Date();
+        if (birthDate > today) {
+          setSnackbar({ open: true, message: "Ngày sinh không được là ngày trong tương lai!" });
+          setLoading(false);
+          return;
         }
+        // Convert birthDate to ISO format
+        submitForm.birthDate = birthDate.toISOString();
       }
-      // Xử lý gender: nếu rỗng thì gửi ''
+      // Gender validation: send '' if empty
       if (submitForm.gender === undefined || submitForm.gender === null) submitForm.gender = '';
       const res = await fetch("/api/user", {
         method: "PUT",
@@ -73,6 +82,29 @@ export default function UserDetailPage() {
       setSnackbar({ open: true, message: "Có lỗi xảy ra!" });
     }
     setLoading(false);
+  };
+
+  const handlePasswordUpdate = async () => {
+    const storedPassword = localStorage.getItem("password");
+    if (oldPassword !== storedPassword) {
+      setPasswordError("Mật khẩu cũ không đúng!");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Mật khẩu mới và xác nhận không khớp!");
+      return;
+    }
+    // Save new password
+    localStorage.setItem("password", newPassword);
+    setPasswordDialog(false);
+    setSnackbar({ open: true, message: "Cập nhật mật khẩu thành công!" });
+    setOldPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPasswordError("");
+
+    // Save updated user info if needed
+    await handleSave();
   };
 
   if (!user) return <Typography align="center" mt={8}>Không tìm thấy thông tin người dùng.</Typography>;
@@ -94,7 +126,25 @@ export default function UserDetailPage() {
       <Button variant="contained" color="success" fullWidth sx={{ mt: 2, fontWeight: 700 }} onClick={handleSave} disabled={loading}>
         {loading ? "Đang lưu..." : "Lưu thông tin"}
       </Button>
+      <Button variant="outlined" color="info" fullWidth sx={{ mt: 2, fontWeight: 700 }} onClick={() => setPasswordDialog(true)}>
+        Cập nhật mật khẩu
+      </Button>
       <Snackbar open={snackbar.open} autoHideDuration={2000} onClose={() => setSnackbar({ ...snackbar, open: false })} message={snackbar.message} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} />
+
+      {/* Password update dialog */}
+      <Dialog open={passwordDialog} onClose={() => setPasswordDialog(false)}>
+        <DialogTitle>Cập nhật mật khẩu</DialogTitle>
+        <DialogContent>
+          <TextField label="Mật khẩu cũ" type="password" fullWidth margin="normal" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
+          <TextField label="Mật khẩu mới" type="password" fullWidth margin="normal" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          <TextField label="Xác nhận mật khẩu mới" type="password" fullWidth margin="normal" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+          {passwordError && <Typography color="error" mt={1}>{passwordError}</Typography>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPasswordDialog(false)}>Hủy</Button>
+          <Button variant="contained" color="success" onClick={handlePasswordUpdate}>Cập nhật</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
-} 
+}
