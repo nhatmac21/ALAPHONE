@@ -12,6 +12,8 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Rating from '@mui/material/Rating';
 import Snackbar from '@mui/material/Snackbar';
+import Divider from '@mui/material/Divider';
+import StarIcon from '@mui/icons-material/Star';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -33,40 +35,36 @@ export default function ProductDetailPage() {
       });
   }, [id]);
 
-  if (loading) return <Typography align="center" mt={8}>Đang tải chi tiết sản phẩm...</Typography>;
+  if (loading) return <Typography align="center" mt={8} color="#fff">Đang tải chi tiết sản phẩm...</Typography>;
   if (!product) return <Typography align="center" mt={8} color="error">Không tìm thấy sản phẩm!</Typography>;
 
   const variants = product.productvariant || [];
   const variant = variants[variantIdx] || {};
 
-  // Lấy promoCode đầu tiên (ưu tiên), có thể mở rộng chọn nhiều
+  // Promo code calculation
   const promoCode = promoCodes[0];
   let discount = 0;
   let priceAfter = Number(product.price);
-  let discountType = '';
   let promoText = '';
   let timeText = '';
-  let slotText = '';
   if (promoCode && promoCode.promotion) {
     discount = Number(promoCode.promotion.value);
-    discountType = promoCode.promotion.type;
-    if (discountType === 'percentage') {
+    if (promoCode.promotion.type === 'percentage') {
       priceAfter = Math.round(Number(product.price) * (1 - discount / 100));
       promoText = `-${discount}%`;
     } else {
       priceAfter = Math.max(0, Number(product.price) - discount);
       promoText = `-${discount.toLocaleString('vi-VN')}đ`;
     }
-    // Thời gian áp dụng
     const start = new Date(promoCode.promotion.startDate).toLocaleDateString('vi-VN');
     const end = new Date(promoCode.promotion.endDate).toLocaleDateString('vi-VN');
     timeText = `Chương trình áp dụng từ ${start} đến ${end}`;
   }
 
-  // Tính toán thống kê đánh giá
+  // Reviews Statistics
   const totalReviews = reviews.length;
   const avgRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalReviews).toFixed(1) : 0;
-  const ratingCounts = [5,4,3,2,1].map(star => reviews.filter(r => r.rating === star).length);
+  const ratingCounts = [5, 4, 3, 2, 1].map(star => reviews.filter(r => r.rating === star).length);
 
   const addToCart = () => {
     const cartData = localStorage.getItem("cart");
@@ -116,7 +114,7 @@ export default function ProductDetailPage() {
   return (
     <main style={{ background: '#111827', color: '#fff', minHeight: '100vh' }}>
       <Box maxWidth={900} mx="auto" mt={0} bgcolor="#18232e" p={4} borderRadius={3} boxShadow={6}>
-        <Stack direction={{xs:'column',md:'row'}} spacing={4}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
           <Box flex={1}>
             <Card sx={{ mb: 2, boxShadow: 3 }}>
               <CardMedia
@@ -162,7 +160,7 @@ export default function ProductDetailPage() {
             <Typography variant="h4" fontWeight={800} color="success.main" mb={2}>{Number(product.price).toLocaleString('vi-VN')} ₫</Typography>
             <Typography mb={1}><b>Hãng:</b> {product.brand}</Typography>
             <Typography mb={1}><b>Danh mục:</b> {product.category}</Typography>
-            <Typography mb={1}><b>Bảo hành:</b> {product.warranty ? new Date(product.warranty).toLocaleDateString() : '-'}</Typography>
+            <Typography mb={1}><b>Bảo hành:</b> {product.warranty ? new Date(product.warranty).toLocaleDateString('vi-VN') : '-'}</Typography>
             <Typography mb={1}><b>Tồn kho:</b> {product.stockQuantity}</Typography>
             {product.stockQuantity <= 0 ? (
               <Typography fontSize={16} color="error" mb={2}>Sản phẩm đã hết hàng.</Typography>
@@ -178,6 +176,32 @@ export default function ProductDetailPage() {
             )}
           </Box>
         </Stack>
+      </Box>
+      <Box maxWidth={900} mx="auto" mt={4} bgcolor="#18232e" p={4} borderRadius={3} boxShadow={6}>
+        <Typography variant="h6" fontWeight={700} color="#4caf50" mb={2}>
+          Đánh giá sản phẩm
+        </Typography>
+        <Stack direction="row" spacing={4} mb={2}>
+          <Typography variant="h4" color="#ff9800" fontWeight={800}>{avgRating}/5</Typography>
+          <Stack spacing={1} mt={1}>
+            {ratingCounts.map((count, idx) => (
+              <Stack key={idx} direction="row" alignItems="center" spacing={1}>
+                <StarIcon sx={{ color: '#ff9800', fontSize: 16 }} />
+                <Typography variant="body2" color="#fff">{5 - idx} sao</Typography>
+                <Box bgcolor="#4caf50" height={8} width={`${count / totalReviews * 100}%`} />
+                <Typography variant="body2" color="#fff">{count}</Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Stack>
+        <Divider />
+        {reviews.map((review, idx) => (
+          <Box key={idx} mt={2}>
+            <Typography fontWeight={600} color="#4caf50">{review.name}</Typography>
+            <Rating value={review.rating} readOnly sx={{ color: '#ff9800' }} />
+            <Typography variant="body2" color="#fff">{review.comment}</Typography>
+          </Box>
+        ))}
       </Box>
       <Snackbar
         open={snackbar.open}

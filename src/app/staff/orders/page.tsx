@@ -105,40 +105,49 @@ export default function StaffOrdersPage() {
         Quản lý đơn hàng
       </Typography>
       {/* Bộ lọc */}
-      <Box display="flex" flexWrap="wrap" gap={2} mb={2} alignItems="center" justifyContent="center">
-        <TextField
-          select
-          label="Trạng thái"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="">Tất cả</MenuItem>
-          <MenuItem value="pending">Chờ xử lý</MenuItem>
-          <MenuItem value="delivered">Đã giao</MenuItem>
-          <MenuItem value="cancelled">Đã hủy</MenuItem>
-        </TextField>
-        <TextField
-          label="Tìm khách hàng (tên, SĐT)"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          sx={{ minWidth: 220 }}
-        />
-        <TextField
-          type="date"
-          label="Từ ngày"
-          InputLabelProps={{ shrink: true }}
-          value={dateFrom}
-          onChange={e => setDateFrom(e.target.value)}
-        />
-        <TextField
-          type="date"
-          label="Đến ngày"
-          InputLabelProps={{ shrink: true }}
-          value={dateTo}
-          onChange={e => setDateTo(e.target.value)}
-        />
-      </Box>
+     <Box display="flex" flexWrap="wrap" gap={2} mb={2} alignItems="center" justifyContent="center">
+  <TextField
+    select
+    label="Trạng thái"
+    value={statusFilter}
+    onChange={e => setStatusFilter(e.target.value)}
+    sx={{ minWidth: 140 }}
+    InputLabelProps={{ style: { color: 'white' } }}
+    InputProps={{ style: { color: 'white' } }}
+  >
+    <MenuItem value="">Tất cả</MenuItem>
+    <MenuItem value="pending">Chờ xử lý</MenuItem>
+    <MenuItem value="delivered">Đã giao</MenuItem>
+    <MenuItem value="cancelled">Đã hủy</MenuItem>
+  </TextField>
+
+  <TextField
+    label="Tìm khách hàng (tên, SĐT)"
+    value={search}
+    onChange={e => setSearch(e.target.value)}
+    sx={{ minWidth: 220 }}
+    InputLabelProps={{ style: { color: 'white' } }}
+    InputProps={{ style: { color: 'white' } }}
+  />
+
+  <TextField
+    type="date"
+    label="Từ ngày"
+    InputLabelProps={{ shrink: true, style: { color: 'white' } }}
+    InputProps={{ style: { color: 'white' } }}
+    value={dateFrom}
+    onChange={e => setDateFrom(e.target.value)}
+  />
+
+  <TextField
+    type="date"
+    label="Đến ngày"
+    InputLabelProps={{ shrink: true, style: { color: 'white' } }}
+    InputProps={{ style: { color: 'white' } }}
+    value={dateTo}
+    onChange={e => setDateTo(e.target.value)}
+  />
+</Box>
       <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 4 }}>
         <Table>
           <TableHead sx={{ background: "#e8f5e9" }}>

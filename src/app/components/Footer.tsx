@@ -14,8 +14,8 @@ export default function Footer() {
         <Stack direction="column" gap={1}>
           <Typography fontWeight={700} fontSize={22} color="#22c55e">Alaphone</Typography>
           <Typography fontSize={15} color="#a3e635">Số 1 về điện thoại chính hãng tại Việt Nam</Typography>
-          <Typography fontSize={14} color="#a3e635">Hotline: <span style={{ color: '#fff' }}>1900 1234</span></Typography>
-          <Typography fontSize={14} color="#a3e635">Email: <span style={{ color: '#fff' }}>support@alaphone.vn</span></Typography>
+          <Typography fontSize={14} color="#a3e635">Hotline: <span style={{ color: '#fff' }}>Đang cập nhật...</span></Typography>
+          <Typography fontSize={14} color="#a3e635">Email: <span style={{ color: '#fff' }}>Đang cập nhật...</span></Typography>
         </Stack>
         <Stack direction="row" gap={2} alignItems="center">
           <IconButton href="https://facebook.com" target="_blank" sx={{ color: '#22c55e' }}><FacebookIcon /></IconButton>

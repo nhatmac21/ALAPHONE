@@ -260,16 +260,7 @@ export default function CheckoutPage() {
                 />
                 Thanh toán khi nhận hàng (COD)
               </label>
-              <label className="flex items-center gap-2 text-white">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="vnpay"
-                  checked={payment === "vnpay"}
-                  onChange={() => setPayment("vnpay")}
-                />
-                VNPay
-              </label>
+              
             </div>
           </div>
           <div>
