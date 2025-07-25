@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
-      where: { OR: [{ isDeleted: false }, { isDeleted: null }] },
+      where: { OR: [{ isDeleted: false }, { isDeleted: true }] },
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json({ success: true, users });

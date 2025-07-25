@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack } from "@mui/material";
+import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Stack, Tabs, Tab } from "@mui/material";
 import { useRouter } from "next/navigation";
 import LogoutIcon from '@mui/icons-material/Logout';
 import GroupIcon from '@mui/icons-material/Group';
@@ -13,6 +13,7 @@ interface User {
   phone?: string;
   role?: string;
   address?: string;
+  isDeleted?: boolean;
 }
 
 export default function AdminUserPage() {
@@ -22,12 +23,11 @@ export default function AdminUserPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm] = useState<Partial<User>>({});
   const [error, setError] = useState("");
+  const [tabIndex, setTabIndex] = useState(0); // Tab index for active/inactive users
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  // Thêm state xác nhận xóa
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
 
-  // Chỉ cho phép admin truy cập
   useEffect(() => {
     const userData = localStorage.getItem("userData");
     if (!userData) {
@@ -42,7 +42,6 @@ export default function AdminUserPage() {
     setIsAdmin(true);
   }, [router]);
 
-  // Lấy danh sách user
   useEffect(() => {
     fetch("/api/user")
       .then(res => res.json())
@@ -69,29 +68,28 @@ export default function AdminUserPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
- const handleSubmit = async () => {
-  setError("");
-  if (!form.userName || !form.fullName || !form.phone) {
-    setError("Vui lòng nhập đầy đủ tên đăng nhập, họ tên, số điện thoại!");
-    return;
-  }
-  const method = editUser ? "PUT" : "POST";
-  const res = await fetch("/api/user", {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(editUser ? { ...form, UserID: editUser.UserID } : form),
-  });
-  const data = await res.json();
 
-  if (data.success) {
-    handleClose(); // Close the dialog
-    // Optionally refresh the user list or show a success notification
-  } else {
-    setError(data.message || "Lỗi lưu user!"); // Show error message
-  }
-};
+  const handleSubmit = async () => {
+    setError("");
+    if (!form.userName || !form.fullName || !form.phone) {
+      setError("Vui lòng nhập đầy đủ tên đăng nhập, họ tên, số điện thoại!");
+      return;
+    }
+    const method = editUser ? "PUT" : "POST";
+    const res = await fetch("/api/user", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editUser ? { ...form, UserID: editUser.UserID } : form),
+    });
+    const data = await res.json();
 
-  // Thêm hàm xóa user
+    if (data.success) {
+      handleClose();
+    } else {
+      setError(data.message || "Lỗi lưu user!");
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteUser) return;
     const res = await fetch("/api/user", {
@@ -113,10 +111,11 @@ export default function AdminUserPage() {
   }
   if (isAdmin === null) return null;
 
-  // Sidebar cố định, main content căn giữa, responsive
+  const activeUsers = users.filter(u => !u.isDeleted);
+  const inactiveUsers = users.filter(u => u.isDeleted);
+
   return (
     <Box minHeight="100vh" bgcolor="#111827">
-      {/* Sidebar cố định */}
       <Box
         sx={{
           width: 240,
@@ -144,7 +143,7 @@ export default function AdminUserPage() {
               color: '#fff',
               fontWeight: 400,
               mb: 2,
-              bgcolor: '#4d8536', // xanh lá đậm
+              bgcolor: '#4d8536',
               fontSize: 22,
               borderRadius: 2,
               boxShadow: 3,
@@ -159,7 +158,6 @@ export default function AdminUserPage() {
           Đăng xuất
         </Button>
       </Box>
-      {/* Main content */}
       <Box
         sx={{
           ml: { xs: 0, md: '240px' },
@@ -172,10 +170,34 @@ export default function AdminUserPage() {
         <Typography variant="h4" fontWeight={700} color="#a3e635" align="center" mb={4}>
           Quản lý người dùng (Admin)
         </Typography>
+       <Tabs
+  value={tabIndex}
+  onChange={(e, newValue) => setTabIndex(newValue)}
+  centered
+  textColor="inherit"
+  TabIndicatorProps={{ style: { backgroundColor: '#66BB6A' } }} // nếu muốn màu gạch dưới
+>
+  <Tab
+    label="Hoạt động"
+    sx={{
+      color: tabIndex === 0 ? '#66BB6A' : 'white',
+      fontWeight: 'bold'
+    }}
+  />
+  <Tab
+    label="Ngừng hoạt động"
+    sx={{
+      color: tabIndex === 1 ? '#66BB6A' : 'white',
+      fontWeight: 'bold'
+    }}
+  />
+</Tabs>
         <Box display="flex" justifyContent="flex-end" mb={2}>
-          <Button variant="contained" color="success" onClick={() => handleOpen()}>
-            Thêm người dùng
-          </Button>
+          {tabIndex === 0 && (
+            <Button variant="contained" color="success" onClick={() => handleOpen()}>
+              Thêm người dùng
+            </Button>
+          )}
         </Box>
         {loading ? (
           <Typography align="center" color="#fff">Đang tải dữ liệu...</Typography>
@@ -193,11 +215,11 @@ export default function AdminUserPage() {
                   <TableCell><b>SĐT</b></TableCell>
                   <TableCell><b>Role</b></TableCell>
                   <TableCell><b>Địa chỉ</b></TableCell>
-                  <TableCell></TableCell>
+                  {tabIndex === 0 && <TableCell></TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map(u => (
+                {(tabIndex === 0 ? activeUsers : inactiveUsers).map(u => (
                   <TableRow key={u.UserID}>
                     <TableCell>{u.UserID}</TableCell>
                     <TableCell>{u.userName}</TableCell>
@@ -206,14 +228,16 @@ export default function AdminUserPage() {
                     <TableCell>{u.phone}</TableCell>
                     <TableCell>{u.role}</TableCell>
                     <TableCell>{u.address}</TableCell>
-                    <TableCell>
-                      <Button variant="outlined" color="primary" size="small" onClick={() => handleOpen(u)}>
-                        Sửa
-                      </Button>
-                      <Button variant="outlined" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleteUser(u)}>
-                        Xóa
-                      </Button>
-                    </TableCell>
+                    {tabIndex === 0 && (
+                      <TableCell>
+                        <Button variant="outlined" color="primary" size="small" onClick={() => handleOpen(u)}>
+                          Sửa
+                        </Button>
+                        <Button variant="outlined" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleteUser(u)}>
+                          Ngừng hoạt động
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -238,16 +262,15 @@ export default function AdminUserPage() {
             <Button variant="contained" color="success" onClick={handleSubmit}>{editUser ? "Lưu" : "Tạo mới"}</Button>
           </DialogActions>
         </Dialog>
-        {/* Thêm Dialog xác nhận xóa */}
         <Dialog open={!!deleteUser} onClose={() => setDeleteUser(null)}>
-          <DialogTitle>Xác nhận xóa người dùng</DialogTitle>
-          <DialogContent>Bạn có chắc chắn muốn xóa user "{deleteUser?.userName}"?</DialogContent>
+          <DialogTitle>Xác nhận ngừng hoạt động người dùng</DialogTitle>
+          <DialogContent>Bạn có chắc chắn muốn ngừng hoạt động user "{deleteUser?.userName}"?</DialogContent>
           <DialogActions>
             <Button onClick={() => setDeleteUser(null)}>Hủy</Button>
-            <Button color="error" variant="contained" onClick={handleDelete}>Xóa</Button>
+            <Button color="error" variant="contained" onClick={handleDelete}>Xác nhận</Button>
           </DialogActions>
         </Dialog>
       </Box>
     </Box>
   );
-} 
+}
