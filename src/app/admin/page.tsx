@@ -234,7 +234,7 @@ export default function AdminUserPage() {
                           Sửa
                         </Button>
                         <Button variant="outlined" color="error" size="small" sx={{ ml: 1 }} onClick={() => setDeleteUser(u)}>
-                          Ngừng hoạt động
+                          Vô Hiệu Hóa
                         </Button>
                       </TableCell>
                     )}

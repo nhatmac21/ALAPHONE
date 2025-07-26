@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Alaphone - Bán điện thoại',
-  description: 'Website bán điện thoại giống TGDD, FPTShop',
+  description: 'Website bán điện thoại chính hãng',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
