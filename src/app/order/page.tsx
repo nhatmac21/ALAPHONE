@@ -98,7 +98,22 @@ export default function OrderHistoryPage() {
               <Paper key={order.OrderID} sx={{ p: 3, borderRadius: 3, background: '#232b36', color: '#a3e635' }} elevation={4}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
                   <Typography fontWeight={700} color="#a3e635" fontSize={22}>Mã đơn: #{order.OrderID}</Typography>
-                  <Chip label={order.status || "Chờ xử lý"} color={order.status === "delivered" ? "success" : order.status === "cancelled" ? "error" : order.status === "received" ? "info" : "warning"} sx={{ fontWeight: 700, fontSize: 16 }} />
+                  <Chip
+  label={
+    order.status === "pending" ? "Đang giao" :
+    order.status === "delivered" ? "Đã giao" :
+    order.status === "received" ? "Đã nhận" :
+    order.status === "cancelled" ? "Đã hủy" :
+    "Chờ xử lý"
+  }
+  color={
+    order.status === "delivered" ? "success" :
+    order.status === "cancelled" ? "error" :
+    order.status === "received" ? "info" :
+    "warning"
+  }
+  sx={{ fontWeight: 700, fontSize: 16 }}
+/>
                 </Stack>
                 <Typography fontSize={16} color="#fff" mb={0.5}>Ngày đặt: <span style={{ color: '#a3e635', fontWeight: 600 }}>{order.createdAt ? new Date(order.createdAt).toLocaleString() : "-"}</span></Typography>
                 <Typography fontSize={16} color="#fff" mb={0.5}>Tổng tiền: <span style={{ color: '#22c55e', fontWeight: 700 }}>{order.totalAmount?.toLocaleString("vi-VN")} ₫</span></Typography>

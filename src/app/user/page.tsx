@@ -85,27 +85,39 @@ export default function UserDetailPage() {
   };
 
   const handlePasswordUpdate = async () => {
-    const storedPassword = localStorage.getItem("password");
-    if (oldPassword !== storedPassword) {
-      setPasswordError("Mật khẩu cũ không đúng!");
+  if (newPassword !== confirmPassword) {
+    setPasswordError("Mật khẩu mới và xác nhận không khớp!");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/user", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        UserID: user?.UserID,
+        oldPassword,
+        password: newPassword,
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!result.success) {
+      setPasswordError(result.message || "Cập nhật mật khẩu thất bại!");
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Mật khẩu mới và xác nhận không khớp!");
-      return;
-    }
-    // Save new password
-    localStorage.setItem("password", newPassword);
-    setPasswordDialog(false);
+
     setSnackbar({ open: true, message: "Cập nhật mật khẩu thành công!" });
+    setPasswordDialog(false);
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setPasswordError("");
-
-    // Save updated user info if needed
-    await handleSave();
-  };
+  } catch (err) {
+    setPasswordError("Có lỗi xảy ra!");
+  }
+};
 
   if (!user) return <Typography align="center" mt={8}>Không tìm thấy thông tin người dùng.</Typography>;
 

@@ -31,34 +31,46 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const data = await req.json();
+
     if (!data.UserID) {
-      return NextResponse.json(
-        { success: false, message: "Thiếu UserID!" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Thiếu UserID!" }, { status: 400 });
     }
+
+    // 1. Tìm user trong DB
+    const existingUser = await prisma.user.findUnique({
+      where: { UserID: data.UserID },
+    });
+
+    if (!existingUser) {
+      return NextResponse.json({ success: false, message: "Không tìm thấy user!" }, { status: 404 });
+    }
+
+    // 2. Nếu có yêu cầu đổi mật khẩu -> kiểm tra oldPassword
+    if (data.password && data.oldPassword) {
+      if (data.oldPassword !== existingUser.password) {
+        return NextResponse.json({ success: false, message: "Mật khẩu cũ không đúng!" }, { status: 400 });
+      }
+    }
+
+    // 3. Tạo object dữ liệu hợp lệ để update
     const updateData: any = {};
     const allowed = [
-      "userName",
-      "fullName",
-      "email",
-      "phone",
-      "address",
-      "birthDate",
-      "gender",
-      "password",
+      "userName", "fullName", "email", "phone",
+      "address", "birthDate", "gender", "password",
     ];
     for (const key of allowed) {
       if (data[key] !== undefined) updateData[key] = data[key];
     }
+
     updateData.updatedAt = new Date();
-    const user = await prisma.user.update({
+
+    // 4. Thực hiện cập nhật
+    const updatedUser = await prisma.user.update({
       where: { UserID: data.UserID },
       data: updateData,
     });
 
-    // Always return success flag
-    return NextResponse.json({ success: true, user });
+    return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
     return NextResponse.json(
       {
